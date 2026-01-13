@@ -1,0 +1,77 @@
+name: pangolin
+services:
+  pangolin:
+    image: fosrl/pangolin:latest
+    container_name: pangolin
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
+      interval: "10s"
+      timeout: "10s"
+      retries: 15
+
+  gerbil:
+    image: fosrl/gerbil:latest
+    container_name: gerbil
+    restart: unless-stopped
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --reachableAt=http://gerbil:3003
+      - --generateAndSaveKeyTo=/var/config/key
+      - --remoteConfig=http://pangolin:3001/api/v1/gerbil/get-config
+      - --reportBandwidthTo=http://pangolin:3001/api/v1/gerbil/receive-bandwidth
+    volumes:
+      - ./config/:/var/config
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    ports:
+      - 51820:51820/udp
+      - 443:443 # Port for traefik because of the network_mode
+      - 80:80 # Port for traefik because of the network_mode
+
+  traefik:
+    image: traefik:v3.6.6
+    container_name: traefik
+    restart: unless-stopped
+
+    network_mode: service:gerbil # Ports appear on the gerbil service
+
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --configFile=/etc/traefik/traefik_config.yml
+      - --accessLog=true
+      - --accessLog.format=json
+      - --accessLog.filePath=/var/log/traefik/access.log
+      - --accessLog.bufferingSize=0
+      # Optional: app log too
+      - --log.level=INFO
+      - --log.filePath=/var/log/traefik/traefik.log
+    volumes:
+      - ./config/traefik:/etc/traefik:ro # Volume to store the Traefik configuration
+      - ./config/letsencrypt:/letsencrypt # Volume to store the Let's Encrypt certificates
+      - ./config/traefik/logs:/var/log/traefik # Volume to store Traefik logs
+    env_file: .env
+
+  newt:
+    image: fosrl/newt
+    container_name: newt
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PANGOLIN_ENDPOINT=https://pangolin.zzz-stream.xyz
+      - NEWT_ID=
+      - NEWT_SECRET=
+      - DOCKER_SOCKET=/var/run/docker.sock
+
+networks:
+    default:
+        name: pangolin
+        external: true

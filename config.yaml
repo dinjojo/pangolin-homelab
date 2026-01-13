@@ -1,0 +1,76 @@
+# Pangolin Configuration File
+# Documentation: https://docs.pangolin.net/self-host/advanced/config-file
+
+# Application Settings
+app:
+  dashboard_url: "https://xxx.dinjo-stream.xyz"
+  log_level: "info"
+  telemetry:
+    anonymous_usage: true
+
+# Domain Configuration (required)
+domains:
+  domain1:
+    base_domain: "xxx-stream.xyz"
+    cert_resolver: "letsencrypt"
+
+# Server Configuration
+server:
+  secret: "XXXXXXXXXXX+w5SgZ5OiYp9g="  # Auto-generated on first run or set via SERVER_SECRET env var
+  cors:
+    origins: ["https://pangolin.xxx-stream.xyz"]
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+    allowed_headers: ["X-CSRF-Token", "Content-Type"]
+    credentials: false
+
+# Traefik Integration
+traefik:
+  cert_resolver: "letsencrypt"
+  http_entrypoint: "web"
+  https_entrypoint: "websecure"
+
+# Gerbil Tunnel Controller (REQUIRED)
+gerbil:
+  start_port: 51820
+  base_endpoint: "pangolin.xxx-stream.xyz"  # Change this
+  use_subdomain: false
+  block_size: 24
+  site_block_size: 30
+  subnet_group: "100.89.240.0/20"
+
+# Organization Settings
+organization:
+  default_network_cidr: "100.89.0.0/16"
+
+# Rate Limiting
+rate_limit:
+  enabled: true
+  max_requests: 100
+  window_seconds: 60
+
+# Email Configuration (Optional)
+email:
+  enabled: false
+  # smtp_host: "smtp.gmail.com"
+  # smtp_port: 587
+  # smtp_pass: ""  # Use EMAIL_SMTP_PASS env var
+  
+
+# Feature Flags
+flags:
+  require_email_verification: false
+  disable_signup_without_invite: true
+  disable_user_create_org: false
+  allow_raw_resources: true
+
+# Database Configuration (SQLite default, PostgreSQL optional)
+# postgres:
+#   connection_string: ""  # Use POSTGRES_CONNECTION_STRING env var
+
+# DNS Configuration
+dns:
+  enabled: false
+  # providers:
+  #   cloudflare:
+  #     api_token: ""
+

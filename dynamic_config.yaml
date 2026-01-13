@@ -1,0 +1,61 @@
+
+# Traefik Dynamic Configuration for Pangolin
+http:
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+    badger:
+      plugin:
+        badger:
+          disableForwardAuth: true
+
+  routers:
+    # HTTP to HTTPS redirect for Pangolin
+    pangolin-redirect:
+      rule: "Host(`pangolin.xxx-stream.xyz`)"
+      service: next-service
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+
+    # Pangolin Dashboard (Next.js frontend)
+    pangolin-next:
+      rule: "Host(`pangolin.xxx-stream.xyz`) && !PathPrefix(`/api/v1`)"
+      service: next-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    # Pangolin API
+    pangolin-api:
+      rule: "Host(`pangolin.xxx-stream.xyz`) && PathPrefix(`/api/v1`)"
+      service: api-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    # Pangolin WebSocket
+    pangolin-ws:
+      rule: "Host(`pangolin.xxx-stream.xyz`)"
+      service: api-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    next-service:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3002"
+
+    api-service:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3000"
